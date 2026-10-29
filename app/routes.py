@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, Response, jsonify, request
 
 from app.auth import create_token, hash_password, require_auth, verify_password
 from app.db import add_user, get_user
@@ -22,6 +22,26 @@ def login():
 def profile(username):
     user = get_user(username)
     return jsonify({"username": username, "role": user["role"]})
+
+
+@app.route("/me/role")
+@require_auth
+def me_role(username: str) -> Response | tuple[dict[str, str], int]:
+    """Return only the authenticated user's role.
+
+    Args:
+        username: The authenticated username supplied by the require_auth
+            decorator.
+
+    Returns:
+        A JSON response containing the role, or a formatted 404 error if the
+        user record does not exist.
+    """
+    user = get_user(username)
+    if user is None:
+        return format_error("user not found", 404)
+    return jsonify({"role": user["role"]})
+
 
 @app.route("/health")
 def health():
